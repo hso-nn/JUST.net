@@ -205,6 +205,14 @@ namespace JUST.NET.Test
                 (JsonTransformer.Transform(JArray.Parse(transformer), input));
             Console.WriteLine(transformedString);
 
+            Console.WriteLine("################################################################################################");
+
+            input = File.ReadAllText("Examples/Input_Array.json");
+            transformer = "{ \"result\": \"#valueof($[?(@.id==1)])\" }";
+            transformedString = JsonConvert.SerializeObject
+                (JsonTransformer.Transform(transformer, input));
+            Console.WriteLine(transformedString);
+
             Console.ReadLine();
         }
     }

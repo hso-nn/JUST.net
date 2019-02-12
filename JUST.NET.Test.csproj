@@ -69,6 +69,9 @@
     <None Include="Examples\InputDynamic.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="Examples\Input_Array.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Examples\Input_Unordered_2.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

@@ -46,7 +46,7 @@ namespace JUST
             return result;
         }
 
-        public static JObject Transform(JObject transformer, JObject input)
+        public static JObject Transform(JObject transformer, JToken input)
         {
             string inputJson = JsonConvert.SerializeObject(input);
             return Transform(transformer, inputJson);
@@ -276,7 +276,7 @@ namespace JUST
                         else
                             reader = new JsonTextReader(new StringReader(inputJson));
                         reader.DateParseHandling = DateParseHandling.None;
-                        JToken token = JObject.Load(reader);
+                        JToken token = JToken.Load(reader);
                         JToken arrayToken = null;
                         if (strArrayToken.Contains("#"))
                         {
