@@ -207,6 +207,25 @@ namespace JUST.NET.Test
 
             Console.WriteLine("################################################################################################");
 
+            transformer = File.ReadAllText("Examples/Transformer_registeredmethods.json");
+            JUSTContext.RegisterCustomFunction("ExternalMethods", "ExternalMethods.ExternalClass", "StaticMethod", "External_StaticMethod");
+            JUSTContext.RegisterCustomFunction("ExternalMethods", "ExternalMethods.ExternalClass", "StaticTypedParameters", "External_StaticTypedParameters");
+            JUSTContext.RegisterCustomFunction("ExternalMethods", "ExternalMethods.ExternalClass", "InstanceMethod", "External_InstanceMethod");
+            JUSTContext.RegisterCustomFunction("ExternalMethods", "ExternalMethods.ExternalClass", "TypedParameters", "External_TypedParameters");
+            JUSTContext.RegisterCustomFunction("ExternalMethods", "ExternalMethods.ExternalClass", "NavigateTypedParameters", "External_NavigateTypedParameters");
+
+            JUSTContext.RegisterCustomFunction(null, "InternalMethods.InternalClass", "StaticMethod");
+            JUSTContext.RegisterCustomFunction(null, "InternalMethods.InternalClass", "StaticTypedParameters");
+            JUSTContext.RegisterCustomFunction(null, "InternalMethods.InternalClass", "InstanceMethod");
+            JUSTContext.RegisterCustomFunction(null, "InternalMethods.InternalClass", "TypedParameters");
+            JUSTContext.RegisterCustomFunction(null, "InternalMethods.InternalClass", "NavigateTypedParameters");
+            
+            transformedString = JsonConvert.SerializeObject
+                (JsonTransformer.Transform(JObject.Parse(transformer), JObject.Parse(input)));
+            Console.WriteLine(transformedString);
+
+            Console.WriteLine("################################################################################################");
+
             input = File.ReadAllText("Examples/Input_Array.json");
             transformer = "{ \"result\": \"#valueof($[?(@.id==1)])\" }";
             transformedString = JsonConvert.SerializeObject
