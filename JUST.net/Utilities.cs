@@ -97,9 +97,11 @@ namespace JUST
                 if (resultObj == null)
                     resultObj = new JArray();
 
-                JObject groupObj = new JObject();
-                groupObj.Add(groupingPropertyName, pair.Key);
-                groupObj.Add(groupedPropertyName, pair.Value);
+                JObject groupObj = new JObject
+                {
+                    { groupingPropertyName, pair.Key },
+                    { groupedPropertyName, pair.Value }
+                };
 
                 resultObj.Add(groupObj);
 

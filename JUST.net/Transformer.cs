@@ -13,14 +13,14 @@ namespace JUST
     {
         public static object valueof(string jsonPath, string inputJson)
         {
-            JToken token = JsonConvert.DeserializeObject<JObject>(inputJson);
+            JToken token = JsonConvert.DeserializeObject<JToken>(inputJson);
             JToken selectedToken = token.SelectToken(jsonPath);
             return GetValue(selectedToken);
         }
 
         public static string exists(string jsonPath, string inputJson)
         {
-            JToken token = JsonConvert.DeserializeObject<JObject>(inputJson);
+            JToken token = JsonConvert.DeserializeObject<JToken>(inputJson);
             JToken selectedToken = token.SelectToken(jsonPath);
 
             if (selectedToken != null)
@@ -31,7 +31,7 @@ namespace JUST
 
         public static string existsandnotempty(string jsonPath, string inputJson)
         {
-            JToken token = JsonConvert.DeserializeObject<JObject>(inputJson);
+            JToken token = JsonConvert.DeserializeObject<JToken>(inputJson);
             JToken selectedToken = token.SelectToken(jsonPath);
 
             if (selectedToken != null)
@@ -533,7 +533,7 @@ namespace JUST
             if (!groupingElement.Contains(":"))
             {
 
-                JObject inObj = JsonConvert.DeserializeObject<JObject>(inputJson);
+                JToken inObj = JsonConvert.DeserializeObject<JToken>(inputJson);
 
                 JArray arr = (JArray)inObj.SelectToken(jsonPath);
 
@@ -545,7 +545,7 @@ namespace JUST
             {
                 string[] groupingElements = groupingElement.Split(':');
 
-                JObject inObj = JsonConvert.DeserializeObject<JObject>(inputJson);
+                JToken inObj = JsonConvert.DeserializeObject<JToken>(inputJson);
 
                 JArray arr = (JArray)inObj.SelectToken(jsonPath);
 

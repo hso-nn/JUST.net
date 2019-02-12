@@ -292,7 +292,7 @@ namespace JUST
                             jsonToLoad = JsonConvert.SerializeObject(currentArrayToken);
                         }
                         
-                        JToken token = JsonConvert.DeserializeObject<JObject>(jsonToLoad);
+                        JToken token = JsonConvert.DeserializeObject<JToken>(jsonToLoad);
                         JToken arrayToken = null;
                         if (strArrayToken.Contains("#"))
                         {
@@ -496,7 +496,7 @@ namespace JUST
 
             string jsonPath = inputString.Substring(indexOfStart + 1, indexOfEnd - indexOfStart - 1);
 
-            JToken token = JsonConvert.DeserializeObject<JObject>(inputJson);
+            JToken token = JsonConvert.DeserializeObject<JToken>(inputJson);
 
             JToken selectedToken = token.SelectToken(jsonPath);
 
@@ -746,26 +746,26 @@ namespace JUST
         #region Split
         public static IEnumerable<string> SplitJson(string input, string arrayPath)
         {
-            JObject inputJObject = JsonConvert.DeserializeObject<JObject>(input);
+            JToken inputJObject = JsonConvert.DeserializeObject<JToken>(input);
 
-            List<JObject> jObjects = SplitJson(inputJObject, arrayPath).ToList<JObject>();
+            List<JToken> tokens = SplitJson(inputJObject, arrayPath).ToList<JToken>();
 
             List<string> output = null;
 
-            foreach (JObject jObject in jObjects)
+            foreach (JToken jToken in tokens)
             {
                 if (output == null)
                     output = new List<string>();
 
-                output.Add(JsonConvert.SerializeObject(jObject));
+                output.Add(JsonConvert.SerializeObject(jToken));
             }
 
             return output;
         }
 
-        public static IEnumerable<JObject> SplitJson(JObject input, string arrayPath)
+        public static IEnumerable<JToken> SplitJson(JToken input, string arrayPath)
         {
-            List<JObject> jsonObjects = null;
+            List<JToken> jsonTokens = null;
 
             JToken tokenArr = input.SelectToken(arrayPath);
 
@@ -787,18 +787,16 @@ namespace JUST
 
                     tokenToReplcae.Replace(foundToken);
 
-                    if (jsonObjects == null)
-                        jsonObjects = new List<JObject>();
+                    if (jsonTokens == null)
+                        jsonTokens = new List<JToken>();
 
-                    jsonObjects.Add(clonedToken as JObject);
-
-
+                    jsonTokens.Add(clonedToken);
                 }
             }
             else
                 throw new Exception("ArrayPath must be a valid JSON path to a JSON array.");
 
-            return jsonObjects;
+            return jsonTokens;
         }
         #endregion
 
