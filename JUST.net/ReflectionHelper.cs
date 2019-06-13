@@ -11,7 +11,7 @@ namespace JUST
 {
     internal static class ReflectionHelper
     {
-        internal const string EXTERNAL_ASSEMBLY_REGEX = "([\\w.]+)[:]{2}([\\w.]+)[:]{0,2}([\\w.]*)";
+        private const string EXTERNAL_ASSEMBLY_REGEX = "([\\w.]+)[:]{2}([\\w.]+)[:]{0,2}([\\w.]*)";
 
         internal static object caller(Assembly assembly, string myclass, string mymethod, object[] parameters, bool convertParameters, JUSTContext context)
         {
@@ -193,6 +193,11 @@ namespace JUST
                 return Activator.CreateInstance(t);
 
             return null;
+        }
+
+        internal static bool IsExternalFunction(string functionName)
+        {
+            return Regex.IsMatch(functionName, EXTERNAL_ASSEMBLY_REGEX);
         }
     }
 }
