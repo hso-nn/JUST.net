@@ -122,5 +122,16 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{\"result\":[\"elem1\",\"elem2\"]}", result);
         }
+
+        [Test]
+        public void FilterSingleElementArray()
+        {
+            const string input = "{ \"array\": [ { \"value\": \"elem1\" }, { \"value\": \"elem2\" } ] } ";
+            const string transformer = "{ \"result\": \"#valueof($.array[?(@.value=='elem1')])\" }";
+
+            var result = JsonTransformer.Transform(transformer, input);
+
+            Assert.AreEqual("{\"result\":[{\"value\":\"elem1\"}]}", result);
+        }
     }
 }

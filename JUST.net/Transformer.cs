@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
 
 namespace JUST
@@ -9,24 +11,22 @@ namespace JUST
         public static object valueof(string jsonPath, JUSTContext context)
         {
             JToken token = context.Input;
-            JToken selectedToken = token.SelectToken(jsonPath);
-            return GetValue(selectedToken);
+            var result = ApplyJsonPath(token, jsonPath);
+            return GetValue(result);
         }
 
         public static bool exists(string jsonPath, JUSTContext context)
         {
             JToken token = context.Input;
-            JToken selectedToken = token.SelectToken(jsonPath);
-
-            return selectedToken != null;
+            var result = ApplyJsonPath(token, jsonPath);
+            return result != null;
         }
 
         public static bool existsandnotempty(string jsonPath, JUSTContext context)
         {
             JToken token = context.Input;
-            JToken selectedToken = token.SelectToken(jsonPath);
-
-            return selectedToken != null && selectedToken.ToString().Trim() != string.Empty;
+            var result = ApplyJsonPath(token, jsonPath);
+            return result != null && result.ToString().Trim() != string.Empty;
         }
 
         public static object ifcondition(object condition, object value, object trueResult, object falseResult, JUSTContext context)
@@ -299,16 +299,14 @@ namespace JUST
 
         public static object currentvalueatpath(JArray array, JToken currentElement, string jsonPath)
         {
-            JToken selectedToken = currentElement.SelectToken(jsonPath);
-
-            return GetValue(selectedToken);
+            var result = ApplyJsonPath(currentElement, jsonPath);
+            return GetValue(result);
         }
 
         public static object lastvalueatpath(JArray array, JToken currentElement, string jsonPath)
         {
-            JToken selectedToken = array.Last.SelectToken(jsonPath);
-
-            return GetValue(selectedToken);
+            var result = ApplyJsonPath(array.Last, jsonPath);
+            return GetValue(result);
         }
         #endregion
 
@@ -549,6 +547,20 @@ namespace JUST
         public static decimal round(decimal val, int decimalPlaces, JUSTContext context)
         {
             return decimal.Round(val, decimalPlaces, MidpointRounding.AwayFromZero);
+        }
+
+        private static JToken ApplyJsonPath(JToken token, string jsonPath)
+        {
+            IEnumerable<JToken> selectedToken = token.SelectTokens(jsonPath);
+            if (selectedToken.Count() > 1 || Regex.IsMatch(jsonPath, "\\[\\?\\(.+\\)\\]$"))
+            {
+                return new JArray(selectedToken);
+            }
+            else if (selectedToken.Count() == 1)
+            {
+                return selectedToken.Single();
+            }
+            return null;
         }
     }
 }
