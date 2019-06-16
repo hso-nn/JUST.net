@@ -124,6 +124,37 @@ namespace JUST.UnitTests
         }
 
         [Test]
+        public void FilterByIndexElementsArray()
+        {
+            const string transformer = "{ \"result\": \"#valueof($.numbers[1:3:1])\" }";
+
+            var result = JsonTransformer.Transform(transformer, ExampleInputs.NumbersArray);
+
+            Assert.AreEqual("{\"result\":[2,3]}", result);
+        }
+
+        [Test]
+        public void FilterByValueElementsArray()
+        {
+            const string transformer = "{ \"result\": \"#valueof($.numbers[?(@ > 1)])\" }";
+
+            var result = JsonTransformer.Transform(transformer, ExampleInputs.NumbersArray);
+
+            Assert.AreEqual("{\"result\":[2,3,4,5]}", result);
+        }
+
+        [Test]
+        public void FilterElementsPropertyArray()
+        {
+            const string input = "{ \"array\": [ { \"value\": 1 }, { \"value\": 2 }, { \"value\": 3 }, { \"value\": 4 } ] } ";
+            const string transformer = "{ \"result\": \"#valueof($.array[?(@.value > 2)])\" }";
+
+            var result = JsonTransformer.Transform(transformer, input);
+
+            Assert.AreEqual("{\"result\":[{\"value\":3},{\"value\":4}]}", result);
+        }
+
+        [Test]
         public void FilterSingleElementArray()
         {
             const string input = "{ \"array\": [ { \"value\": \"elem1\" }, { \"value\": \"elem2\" } ] } ";
@@ -132,6 +163,17 @@ namespace JUST.UnitTests
             var result = JsonTransformer.Transform(transformer, input);
 
             Assert.AreEqual("{\"result\":[{\"value\":\"elem1\"}]}", result);
+        }
+
+        [Test]
+        public void FilterEmptyArray()
+        {
+            const string input = "{ \"array\": [ { \"value\": \"elem1\" }, { \"value\": \"elem2\" } ] } ";
+            const string transformer = "{ \"result\": \"#valueof($.array[?(@.value=='elem3')])\" }";
+
+            var result = JsonTransformer.Transform(transformer, input);
+
+            Assert.AreEqual("{\"result\":[]}", result);
         }
     }
 }

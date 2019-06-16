@@ -549,12 +549,16 @@ namespace JUST
             return decimal.Round(val, decimalPlaces, MidpointRounding.AwayFromZero);
         }
 
-        private static JToken ApplyJsonPath(JToken token, string jsonPath)
+        internal static JToken ApplyJsonPath(JToken token, string jsonPath)
         {
             IEnumerable<JToken> selectedToken = token.SelectTokens(jsonPath);
-            if (selectedToken.Count() > 1 || Regex.IsMatch(jsonPath, "\\[\\?\\(.+\\)\\]$"))
+            if (selectedToken.Count() > 1)
             {
                 return new JArray(selectedToken);
+            }
+            else if (Regex.IsMatch(jsonPath, "\\[\\?\\(.+\\)\\]$"))
+            {
+                return selectedToken.Count() > 0 ? new JArray(selectedToken) : new JArray();
             }
             else if (selectedToken.Count() == 1)
             {

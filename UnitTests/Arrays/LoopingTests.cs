@@ -74,5 +74,35 @@ namespace JUST.UnitTests.Arrays
 
             Assert.AreEqual("{\"hello\":[{\"Details\":[{\"CurrentCountry\":\"Iceland\"}]},{\"Details\":[{\"CurrentCountry\":\"Denmark\"}]}]}", result);
         }
+
+        [Test]
+        public void LoopFilterElements()
+        {
+            const string transformer = "{ \"iteration\": { \"#loop($.numbers[?(@ > 3)])\": { \"current_value\": \"#currentvalue()\" } } }";
+
+            var result = JsonTransformer.Transform(transformer, ExampleInputs.NumbersArray);
+
+            Assert.AreEqual("{\"iteration\":[{\"current_value\":4},{\"current_value\":5}]}", result);
+        }
+
+        [Test]
+        public void LoopOneElement()
+        {
+            const string transformer = "{ \"iteration\": { \"#loop($.numbers)\": { \"current_value\": \"#currentvalue()\" } } }";
+
+            var result = JsonTransformer.Transform(transformer, "{\"numbers\": [ 1 ]}");
+
+            Assert.AreEqual("{\"iteration\":[{\"current_value\":1}]}", result);
+        }
+
+        [Test]
+        public void LoopFilterEmptyElements()
+        {
+            const string transformer = "{ \"iteration\": { \"#loop($.numbers[?(@ > 5)])\": { \"current_value\": \"#currentvalue()\" } } }";
+
+            var result = JsonTransformer.Transform(transformer, ExampleInputs.NumbersArray);
+
+            Assert.AreEqual("{\"iteration\":[]}", result);
+        }
     }
 }

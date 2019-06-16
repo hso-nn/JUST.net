@@ -224,52 +224,22 @@ namespace JUST
 
                     if (property.Name != null && property.Name.Contains("#loop"))
                     {
-                        string strArrayToken = property.Name.Substring(6, property.Name.Length - 7);
+                        ExpressionHelper.TryParseFunctionNameAndArguments(property.Name, out string functionName, out string argumentString);
+                        JToken token = currentArrayToken != null && functionName == "loopwithincontext" ?
+                            currentArrayToken :
+                            GetInputToken(localContext);
 
-                        JToken token = GetInputToken(localContext);
-                        if (currentArrayToken != null && property.Name.Contains("#loopwithincontext"))
+                        string[] arguments = ExpressionHelper.GetArguments(argumentString);
+                        var listParameters = new List<object>();
+                        int i = 0;
+                        for (; i < (arguments?.Length ?? 0); i++)
                         {
-                            strArrayToken = property.Name.Substring(19, property.Name.Length - 20);
-                            token = currentArrayToken;
-                        }
-                        
-                        JToken arrayToken;
-                        if (strArrayToken.Contains("#"))
-                        {
-                            int sIndex = strArrayToken.IndexOf("#");
-                            string sub1 = strArrayToken.Substring(0, sIndex);
-
-                            int indexOfENdFubction = GetIndexOfFunctionEnd(strArrayToken);
-
-                            if (indexOfENdFubction > sIndex && sIndex > 0)
-                            {
-                                string sub2 = strArrayToken.Substring(indexOfENdFubction + 1, strArrayToken.Length - indexOfENdFubction - 1);
-
-                                string functionResult = ParseFunction(strArrayToken.Substring(sIndex, indexOfENdFubction - sIndex + 1), parentArray, currentArrayToken, localContext).ToString();
-
-                                strArrayToken = sub1 + functionResult + sub2;
-                            }
-                        }
-                        try
-                        {
-                            arrayToken = token.SelectToken(strArrayToken);
-
-                            if (arrayToken is JObject)
-                            {
-                                arrayToken = new JArray(arrayToken);
-                            }
-                        }
-                        catch
-                        {
-                            var multipleTokens = token.SelectTokens(strArrayToken);
-                            arrayToken = new JArray(multipleTokens);
+                            listParameters.Add(ParseArgument(null, null, arguments[i], localContext));
                         }
 
-                        if (arrayToken == null)
-                        {
-                            arrayToForm = new JArray();
-                        }
-                        else
+                        JToken arrayToken = Transformer.ApplyJsonPath(token, (string)listParameters.Single());
+                        arrayToForm = new JArray();
+                        if (arrayToken != null)
                         {
                             JArray array = (JArray)arrayToken;
 
@@ -277,9 +247,6 @@ namespace JUST
 
                             while (elements.MoveNext())
                             {
-                                if (arrayToForm == null)
-                                    arrayToForm = new JArray();
-
                                 JToken clonedToken = childToken.DeepClone();
 
                                 RecursiveEvaluate(clonedToken, array, elements.Current, localContext);
@@ -474,7 +441,7 @@ namespace JUST
             {
                 throw new ArgumentException("Invalid jsonPath for #copy!");
             }
-            JToken selectedToken = GetInputToken(localContext).SelectToken(jsonPath);
+            JToken selectedToken = Transformer.ApplyJsonPath(GetInputToken(localContext), jsonPath);
             return selectedToken;
         }
 
