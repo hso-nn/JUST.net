@@ -200,5 +200,57 @@ namespace JUST.UnitTests
 
             Assert.AreEqual("{\"result\":true}", result);
         }
+
+        [Test]
+        public void Issue77()
+        {
+            var input = "[{\"id\": 1, \"cnt\": 100, \"rowNum\": 1, \"col\": 1},{\"id\": 2, \"cnt\": 89, \"rowNum\": 1, \"col\": 1 }]";
+            var transformer = "[{ \"#loop($)\": { \"key\": \"#currentvalueatpath($.id)\", \"quantity\": \"#currentvalueatpath($.cnt)\" } }]";
+            var context = new JUSTContext
+            {
+                EvaluationMode = EvaluationMode.Strict
+            };
+            var result = JsonTransformer.Transform(transformer, input, context);
+            Assert.AreEqual("[{\"key\":1,\"quantity\":100},{\"key\":2,\"quantity\":89}]", result);
+        }
+
+        [Test]
+        public void Issue77_2()
+        {
+            var input = "[{\"id\": 1, \"cnt\": 100, \"rowNum\": 1, \"col\": 1},{\"id\": 2, \"cnt\": 89, \"rowNum\": 1, \"col\": 1 }]";
+            var transformer = "{ \"#loop($)\": { \"key\": \"#currentvalueatpath($.id)\", \"quantity\": \"#currentvalueatpath($.cnt)\" } }";
+            var context = new JUSTContext
+            {
+                EvaluationMode = EvaluationMode.Strict
+            };
+            var result = JsonTransformer.Transform(transformer, input, context);
+            Assert.AreEqual("[{\"key\":1,\"quantity\":100},{\"key\":2,\"quantity\":89}]", result);
+        }
+
+        [Test]
+        public void Issue77_3()
+        {
+            var input = "[{\"id\": 1, \"cnt\": 100, \"rowNum\": 1, \"col\": 1},{\"id\": 2, \"cnt\": 89, \"rowNum\": 1, \"col\": 1 }]";
+            var transformer = "[{ \"a\": \"#valueof($)\" }, { \"#loop($)\": { \"key\": \"#currentvalueatpath($.id)\", \"quantity\": \"#currentvalueatpath($.cnt)\" } }]";
+            var context = new JUSTContext
+            {
+                EvaluationMode = EvaluationMode.Strict
+            };
+            var result = JsonTransformer.Transform(transformer, input, context);
+            Assert.AreEqual("[{\"a\":[{\"id\":1,\"cnt\":100,\"rowNum\":1,\"col\":1},{\"id\":2,\"cnt\":89,\"rowNum\":1,\"col\":1}]},{\"key\":1,\"quantity\":100},{\"key\":2,\"quantity\":89}]", result);
+        }
+
+        [Test]
+        public void Issue77_4()
+        {
+            var input = "[{\"id\": 1, \"cnt\": 100, \"rowNum\": 1, \"col\": 1},{\"id\": 2, \"cnt\": 89, \"rowNum\": 1, \"col\": 1 }]";
+            var transformer = "[[{ \"#loop($)\": { \"key\": \"#currentvalueatpath($.id)\", \"quantity\": \"#currentvalueatpath($.cnt)\" } }], { \"a\": \"#valueof($)\" }]";
+            var context = new JUSTContext
+            {
+                EvaluationMode = EvaluationMode.Strict
+            };
+            var result = JsonTransformer.Transform(transformer, input, context);
+            Assert.AreEqual("[[{\"key\":1,\"quantity\":100},{\"key\":2,\"quantity\":89}],{\"a\":[{\"id\":1,\"cnt\":100,\"rowNum\":1,\"col\":1},{\"id\":2,\"cnt\":89,\"rowNum\":1,\"col\":1}]}]", result);
+        }
     }
 }

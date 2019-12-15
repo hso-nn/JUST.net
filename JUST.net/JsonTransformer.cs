@@ -29,22 +29,9 @@ namespace JUST
 
         public static string Transform(string transformerJson, JToken input, JUSTContext localContext = null)
         {
-            JToken result = null;
             JToken transformerToken = JsonConvert.DeserializeObject<JToken>(transformerJson);
-            switch (transformerToken.Type)
-            {
-                case JTokenType.Object:
-                    result = Transform(transformerToken as JObject, input, localContext);
-                    break;
-                case JTokenType.Array:
-                    result = Transform(transformerToken as JArray, input, localContext);
-                    break;
-                default:
-                    throw new NotSupportedException($"Transformer of type '{transformerToken.Type}' not supported!");
-            }
-
+            var result = Transform(transformerToken, input, localContext);
             string output = JsonConvert.SerializeObject(result);
-
             return output;
         }
 
@@ -56,27 +43,41 @@ namespace JUST
         public static JArray Transform(JArray transformerArray, JToken input, JUSTContext localContext = null)
         {
             var result = new JArray();
-            for (int i = 0; i < transformerArray.Count; i++) {
+            for (int i = 0; i < transformerArray.Count; i++)
+            {
                 var transformer = transformerArray[i];
-                if (transformer.Type != JTokenType.Object)
-                {
-                    throw new NotSupportedException($"Transformer of type '{transformer.Type}' not supported!");
-                }
-                Transform(transformer as JObject, input, localContext);
-                result.Add(transformer);
+                JToken afterTransform = Transform(transformer, input, localContext);
+                result.Add(afterTransform.HasValues ? afterTransform : transformerArray[i]);
             }
             return result;
         }
 
-        public static JObject Transform(JObject transformer, string input, JUSTContext localContext = null)
+        private static JToken Transform(JToken transformer, JToken input, JUSTContext localContext = null)
+        {
+            switch (transformer.Type)
+            {
+                case JTokenType.Object:
+                    return Transform(transformer as JObject, input, localContext);
+                case JTokenType.Array:
+                    return Transform(transformer as JArray, input, localContext);
+                default:
+                    throw new NotSupportedException($"Transformer of type '{transformer.Type}' not supported!");
+            }
+        }
+
+        public static JToken Transform(JObject transformer, string input, JUSTContext localContext = null)
         {
             return Transform(transformer, JsonConvert.DeserializeObject<JToken>(input), localContext);
         }
 
-        public static JObject Transform(JObject transformer, JToken input, JUSTContext localContext = null)
+        public static JToken Transform(JObject transformer, JToken input, JUSTContext localContext = null)
         {
             (localContext ?? GlobalContext).Input = input;
             RecursiveEvaluate(transformer, null, null, localContext);
+            if (transformer.First is JProperty prop && prop.Name.StartsWith("#loop"))
+            {
+                return transformer.First.First;
+            }
             return transformer;
         }
 
@@ -429,24 +430,52 @@ namespace JUST
 
             if (loopProperties != null)
             {
-                foreach (string propertyToDelete in loopProperties)
+                if (parentToken.Parent == null && parentToken.Children().Count() == 1)
                 {
-                    (parentToken as JObject).Remove(propertyToDelete);
+                    if (parentToken.Parent == null && parentToken.Type == JTokenType.Object)
+                    {
+                        (parentToken.First as JProperty).Value = arrayToForm;
+                        arrayToForm = null;
+                    }
+                    else if (parentToken.Parent != null && parentToken.Parent is JArray arr)
+                    {
+                        foreach (var item in arrayToForm)
+                        {
+                            arr.Add(item);
+                        }
+
+                        if (!parentToken.HasValues)
+                        {
+                            var tmp = parentToken;
+                            parentToken = arr;
+                            tmp.Remove();
+                        }
+                    }
+                    else
+                    {
+                    }
+                }
+                else
+                {
+                    foreach (string propertyToDelete in loopProperties)
+                    {
+                        (parentToken as JObject).Remove(propertyToDelete);
+                    }
                 }
             }
             if (arrayToForm != null)
             {
                 if (parentToken.Parent != null && parentToken.Parent is JArray arr)
                 {
-                    foreach (var item in arrayToForm)
+                    var index = arr.IndexOf(arr.FirstOrDefault(t => !t.HasValues));
+                    foreach (var item in arrayToForm.Reverse())
                     {
-                        arr.Add(item);
+                        arr.Insert(index+1, item);
                     }
+                    arr.RemoveAt(index);
                     if (!parentToken.HasValues)
                     {
-                        var tmp = parentToken;
                         parentToken = arr;
-                        tmp.Remove();
                     }
                 }
                 else
