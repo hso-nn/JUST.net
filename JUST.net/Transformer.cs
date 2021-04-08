@@ -372,11 +372,17 @@ namespace JUST
             {
                 foreach (JToken child in token.Children())
                 {
-                    result = Max(result, child.ToString());
+                    result = Max(result, child);
                 }
             }
 
             return TypedNumber(result);
+        }
+
+        private static decimal Max(decimal d1, JToken token)
+        {
+            decimal thisValue = Convert.ToDecimal(token.ToString());
+            return Math.Max(d1, thisValue);
         }
 
         public static object maxatpath(JArray parsedArray, string path, JUSTContext context)
@@ -388,17 +394,11 @@ namespace JUST
                 {
                     var selector = context.Resolve<T>(token);
                     JToken selectedToken = selector.Select(path);
-                    result = Max(result, selectedToken.ToString());
+                    result = Max(result, selectedToken);
                 }
             }
 
             return TypedNumber(result);
-        }
-
-        private static decimal Max(decimal val1, object val2)
-        {
-            decimal thisValue = Convert.ToDecimal(val2);
-            return Math.Max(val1, thisValue);
         }
 
         public static object min(object obj, JUSTContext context)
@@ -572,7 +572,11 @@ namespace JUST
 
             if (list.Length >= 2)
             {
-                if (list[0].ToString().Equals(list[1].ToString()))
+                var context = (list.Length > 2)
+                    ? (JUSTContext)list[2]
+                    : new JUSTContext();
+
+                if (ComparisonHelper.Equals(list[0], list[1], context.EvaluationMode))
                     result = true;
             }
 
@@ -585,8 +589,11 @@ namespace JUST
 
             if (list.Length >= 2)
             {
-                if (list[0].ToString().Contains(list[1].ToString()))
-                    result = true;
+                var context = (list.Length > 2)
+                    ? (JUSTContext)list[2]
+                    : new JUSTContext();
+
+                result = ComparisonHelper.Contains(list[0], list[1], context.EvaluationMode);
             }
 
             return result;
