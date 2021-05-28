@@ -6,11 +6,20 @@ using System.Linq;
 
 namespace JUST
 {
-    internal class Transformer
+    public abstract class Transformer
     {
+        protected int _loopCounter = 0;
+
+        protected readonly JUSTContext Context;
+
+        public Transformer(JUSTContext context)
+        {
+            Context = context ?? new JUSTContext();
+        }
+
         protected static object TypedNumber(decimal number)
         {
-            return number * 10 % 10 == 0 ? (object)Convert.ToInt32(number) : number;
+            return number * 10 % 10 == 0 ? (number <= int.MaxValue ? (object)Convert.ToInt32(number) : number) : number;
         }
 
         internal static object GetValue(JToken selectedToken)
@@ -69,8 +78,12 @@ namespace JUST
         }
     }
 
-    internal class Transformer<T> : Transformer where T : ISelectableToken
+    public abstract class Transformer<T> : Transformer where T : ISelectableToken
     {
+        public Transformer(JUSTContext context) : base(context)
+        {
+        }
+
         public static object valueof(string path, JUSTContext context)
         {
             var selector = context.Resolve<T>(context.Input);
@@ -181,7 +194,20 @@ namespace JUST
             return stringRef.LastIndexOf(searchString);
         }
 
-        public static string concatall(JArray parsedArray, JUSTContext context)
+        public static string concatall(object obj, JUSTContext context)
+        {
+            JToken token = JToken.FromObject(obj);
+            if (obj is string path && path.StartsWith(context.Resolve<T>(token).RootReference))
+            {
+                return Concatall(JToken.FromObject(valueof(path, context)), context);
+            }
+            else
+            {
+                return Concatall(token, context);
+            }
+        }
+
+        private static string Concatall(JToken parsedArray, JUSTContext context)
         {
             string result = null;
 
@@ -251,7 +277,20 @@ namespace JUST
         #endregion
 
         #region aggregate functions
-        public static object sum(JArray parsedArray, JUSTContext context)
+        public static object sum(object obj, JUSTContext context)
+        {
+            JToken token = JToken.FromObject(obj);
+            if (obj is string path && path.StartsWith(context.Resolve<T>(token).RootReference))
+            {
+                return Sum(JToken.FromObject(valueof(path, context)), context);
+            }
+            else
+            {
+                return Sum(token, context);
+            }
+        }
+
+        private static object Sum(JToken parsedArray, JUSTContext context)
         {
             decimal result = 0;
             if (parsedArray != null)
@@ -281,14 +320,28 @@ namespace JUST
             return TypedNumber(result);
         }
 
-        public static object average(JArray parsedArray, JUSTContext context)
+        public static object average(object obj, JUSTContext context)
+        {
+            JToken token = JToken.FromObject(obj);
+            if (obj is string path && path.StartsWith(context.Resolve<T>(token).RootReference))
+            {
+                return Average(JToken.FromObject(valueof(path, context)), context);
+            }
+            else
+            {
+                return Average(token, context);
+            }
+        }
+
+        private static object Average(JToken token, JUSTContext context)
         {
             decimal result = 0;
-            if (parsedArray != null)
+            JArray parsedArray = token as JArray;
+            if (token != null)
             {
-                foreach (JToken token in parsedArray.Children())
+                foreach (JToken child in token.Children())
                 {
-                    result += Convert.ToDecimal(token.ToString());
+                    result += Convert.ToDecimal(child.ToString());
                 }
             }
 
@@ -312,19 +365,37 @@ namespace JUST
             return TypedNumber(result / parsedArray.Count);
         }
 
-        public static object max(JArray parsedArray, JUSTContext context)
+        public static object max(object obj, JUSTContext context)
+        {
+            JToken token = JToken.FromObject(obj);
+            if (obj is string path && path.StartsWith(context.Resolve<T>(token).RootReference))
+            {
+                return Max(JToken.FromObject(valueof(path, context)), context);
+            }
+            else
+            {
+                return Max(token, context);
+            }
+        }
+
+        private static object Max(JToken token, JUSTContext context)
         {
             decimal result = 0;
-            if (parsedArray != null)
+            if (token != null)
             {
-                foreach (JToken token in parsedArray.Children())
+                foreach (JToken child in token.Children())
                 {
-                    decimal thisValue = Convert.ToDecimal(token.ToString());
-                    result = Math.Max(result, thisValue);
+                    result = Max(result, child);
                 }
             }
 
             return TypedNumber(result);
+        }
+
+        private static decimal Max(decimal d1, JToken token)
+        {
+            decimal thisValue = Convert.ToDecimal(token.ToString());
+            return Math.Max(d1, thisValue);
         }
 
         public static object maxatpath(JArray parsedArray, string path, JUSTContext context)
@@ -336,22 +407,34 @@ namespace JUST
                 {
                     var selector = context.Resolve<T>(token);
                     JToken selectedToken = selector.Select(path);
-                    decimal thisValue = Convert.ToDecimal(selectedToken.ToString());
-                    result = Math.Max(result, thisValue);
+                    result = Max(result, selectedToken);
                 }
             }
 
             return TypedNumber(result);
         }
 
-        public static object min(JArray parsedArray, JUSTContext context)
+        public static object min(object obj, JUSTContext context)
+        {
+            JToken token = JToken.FromObject(obj);
+            if (obj is string path && path.StartsWith(context.Resolve<T>(token).RootReference))
+            {
+                return Min(JToken.FromObject(valueof(path, context)), context);
+            }
+            else
+            {
+                return Min(token, context);
+            }
+        }
+
+        private static object Min(JToken token, JUSTContext context)
         {
             decimal result = decimal.MaxValue;
-            if (parsedArray != null)
+            if (token != null)
             {
-                foreach (JToken token in parsedArray.Children())
+                foreach (JToken child in token.Children())
                 {
-                    decimal thisValue = Convert.ToDecimal(token.ToString());
+                    decimal thisValue = Convert.ToDecimal(child.ToString());
                     result = Math.Min(result, thisValue);
                 }
             }
@@ -502,7 +585,11 @@ namespace JUST
 
             if (list.Length >= 2)
             {
-                if (list[0].ToString().Equals(list[1].ToString()))
+                var context = (list.Length > 2)
+                    ? (JUSTContext)list[2]
+                    : new JUSTContext();
+
+                if (ComparisonHelper.Equals(list[0], list[1], context.EvaluationMode))
                     result = true;
             }
 
@@ -515,8 +602,11 @@ namespace JUST
 
             if (list.Length >= 2)
             {
-                if (list[0].ToString().Contains(list[1].ToString()))
-                    result = true;
+                var context = (list.Length > 2)
+                    ? (JUSTContext)list[2]
+                    : new JUSTContext();
+
+                result = ComparisonHelper.Contains(list[0], list[1], context.EvaluationMode);
             }
 
             return result;
@@ -642,7 +732,11 @@ namespace JUST
         public static int length(object val, JUSTContext context)
         {
             int result = 0;
-            if (val is IEnumerable enumerable)
+            if (val is string path && path.StartsWith(context.Resolve<T>(null).RootReference))
+            {
+                result = length(valueof(path, context), context);
+            }
+            else if (val is IEnumerable enumerable)
             {
                 var enumerator = enumerable.GetEnumerator();
                 while (enumerator.MoveNext())

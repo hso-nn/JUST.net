@@ -15,16 +15,10 @@ namespace JUST
         }
     }
 
-    public class JsonTransformer<T> where T: ISelectableToken
+    public class JsonTransformer<T> : Transformer<T> where T: ISelectableToken
     {
-        private int _loopCounter = 0;
-
-        private readonly JUSTContext Context;
-
-        public JsonTransformer(JUSTContext context = null)
+        public JsonTransformer(JUSTContext context = null) : base(context)
         {
-            Context = context ?? new JUSTContext();
-
             if (JsonConvert.DefaultSettings == null)
             {
                 JsonConvert.DefaultSettings = () => new JsonSerializerSettings
@@ -344,24 +338,32 @@ namespace JUST
         {
             if (loopProperties != null)
             {
-                foreach (string propertyToDelete in loopProperties)
+                JObject obj = parentToken as JObject;
+                if (obj != null)
                 {
-                    if (dictToForm == null && arrayToForm == null && parentToken.Count() <= 1)
+                    foreach (string propertyToDelete in loopProperties)
                     {
-                        parentToken.Replace(JValue.CreateNull());
-                    }
-                    else
-                    {
-                        (parentToken as JObject).Remove(propertyToDelete);
+                        if (dictToForm == null && arrayToForm == null && parentToken.Count() <= 1)
+                        {
+                            obj.Replace(JValue.CreateNull());
+                        }
+                        else
+                        {
+                            obj.Remove(propertyToDelete);
+                        }
                     }
                 }
             }
 
             if (condProps != null)
             {
-                foreach (string propertyToDelete in condProps)
+                JObject obj = parentToken as JObject;
+                if (obj != null)
                 {
-                    (parentToken as JObject).Remove(propertyToDelete);
+                    foreach (string propertyToDelete in condProps)
+                    {
+                        obj.Remove(propertyToDelete);
+                    }
                 }
             }
 
@@ -458,7 +460,10 @@ namespace JUST
                             parentArray = new Dictionary<string, JArray> { { alias, array } };
                         }
 
-                        arrayToForm = new JArray();
+                        if (arrayToForm == null)
+                        {
+                            arrayToForm = new JArray();
+                        }
                         if (!isDictionary)
                         {
                             while (elements.MoveNext())
@@ -557,16 +562,10 @@ namespace JUST
         {
             object functionResult = ParseFunction(arguments, parentArray, currentArrayToken);
 
-            JProperty clonedProperty = new JProperty(functionResult.ToString(),
-                property.Value.Type != JTokenType.Null ?
-                    ReflectionHelper.GetTypedValue(
-                        property.Value.Type,
-                        ParseFunction(
-                            property.Value.Value<string>(),
-                            parentArray,
-                            currentArrayToken),
-                        Context.EvaluationMode) :
-                    null);
+            object val = property.Value.Type == JTokenType.String ? 
+                ParseFunction(property.Value.Value<string>(), parentArray, currentArrayToken) : 
+                property.Value;
+            JProperty clonedProperty = new JProperty(functionResult.ToString(), val);
 
             if (loopProperties == null)
                 loopProperties = new List<string>();
@@ -774,7 +773,8 @@ namespace JUST
                 {
                     var condition = ParseArgument(array, currentArrayElement, arguments[0]);
                     var value = ParseArgument(array, currentArrayElement, arguments[1]);
-                    var index = condition.ToString().ToLower() == value.ToString().ToLower() ? 2 : 3;
+                    var equal = ComparisonHelper.Equals(condition, value, Context.EvaluationMode);
+                    var index = (equal) ? 2 : 3;
                     output = ParseArgument(array, currentArrayElement, arguments[index]);
                 }
                 else
@@ -795,12 +795,12 @@ namespace JUST
 
                     if (new[] { "currentvalue", "currentindex", "lastindex", "lastvalue" }.Contains(functionName))
                     {
-                        var alias = ParseLoopAlias(listParameters, 1);
+                        var alias = ParseLoopAlias(listParameters, 1, array.Last().Key);
                         output = ReflectionHelper.Caller<T>(null, "JUST.Transformer`1", functionName, new object[] { array[alias], currentArrayElement[alias] }, convertParameters, Context);
                     }
                     else if (new[] { "currentvalueatpath", "lastvalueatpath" }.Contains(functionName))
                     {
-                        var alias = ParseLoopAlias(listParameters, 2);
+                        var alias = ParseLoopAlias(listParameters, 2, array.Last().Key);
                         output = ReflectionHelper.Caller<T>(
                             null,
                             "JUST.Transformer`1",
@@ -811,7 +811,7 @@ namespace JUST
                     }
                     else if (functionName == "currentproperty")
                     {
-                        var alias = ParseLoopAlias(listParameters, 1);
+                        var alias = ParseLoopAlias(listParameters, 1, array.Last().Key);
                         output = ReflectionHelper.Caller<T>(null, "JUST.Transformer`1", functionName,
                             new object[] { array[alias], currentArrayElement[alias], Context },
                             convertParameters, Context);
@@ -819,11 +819,6 @@ namespace JUST
                     else if (functionName == "customfunction")
                         output = CallCustomFunction(listParameters.ToArray());
                     else if (Context?.IsRegisteredCustomFunction(functionName) ?? false)
-                    {
-                        var methodInfo = Context.GetCustomMethod(functionName);
-                        output = ReflectionHelper.InvokeCustomMethod<T>(methodInfo, parameters, convertParameters, Context);
-                    }
-                    else if (Context.IsRegisteredCustomFunction(functionName))
                     {
                         var methodInfo = Context.GetCustomMethod(functionName);
                         output = ReflectionHelper.InvokeCustomMethod<T>(methodInfo, parameters, convertParameters, Context);
@@ -868,7 +863,7 @@ namespace JUST
             }
         }
 
-        private string ParseLoopAlias(List<object> listParameters, int index)
+        private string ParseLoopAlias(List<object> listParameters, int index, string defaultValue)
         {
             string alias;
             if (listParameters.Count > index)
@@ -878,7 +873,7 @@ namespace JUST
             }
             else
             {
-                alias = $"loop{_loopCounter}";
+                alias = defaultValue; //$"loop{_loopCounter}";
             }
             return alias;
         }
