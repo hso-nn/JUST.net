@@ -1,4 +1,5 @@
 ﻿using JUST.net.Selectables;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -42,6 +43,7 @@ namespace JUST
         internal JToken Input;
 
         public EvaluationMode EvaluationMode = EvaluationMode.FallbackToDefault;
+        public JsonSerializerSettings JsonSettings { get; set; }
 
         public int DefaultDecimalPlaces
         {
@@ -123,7 +125,7 @@ namespace JUST
             return _customFunctions.ContainsKey(aliasOrName);
         }
 
-        internal T Resolve<T>(JToken token) where T: ISelectableToken
+        internal T Resolve<T>(JToken token) where T : ISelectableToken
         {
             T instance = Activator.CreateInstance<T>();
             instance.Token = token;

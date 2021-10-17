@@ -1,4 +1,5 @@
 ﻿using JUST.net.Selectables;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
@@ -15,6 +16,12 @@ namespace JUST
         public Transformer(JUSTContext context)
         {
             Context = context ?? new JUSTContext();
+            Context.JsonSettings = JsonConvert.DefaultSettings != null ?
+                JsonConvert.DefaultSettings() :
+                new JsonSerializerSettings
+                {
+                    DateParseHandling = DateParseHandling.None
+                };
         }
 
         protected static object TypedNumber(decimal number)

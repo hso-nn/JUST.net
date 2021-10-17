@@ -19,24 +19,17 @@ namespace JUST
     {
         public JsonTransformer(JUSTContext context = null) : base(context)
         {
-            if (JsonConvert.DefaultSettings == null)
-            {
-                JsonConvert.DefaultSettings = () => new JsonSerializerSettings
-                {
-                    DateParseHandling = DateParseHandling.None
-                };
-            }
         }
 
         public string Transform(string transformerJson, string inputJson)
         {
-            return Transform(transformerJson, JsonConvert.DeserializeObject<JToken>(inputJson));
+            return Transform(transformerJson, JsonConvert.DeserializeObject<JToken>(inputJson, Context.JsonSettings));
         }
 
         public string Transform(string transformerJson, JToken input)
         {
             JToken result;
-            JToken transformerToken = JsonConvert.DeserializeObject<JToken>(transformerJson);
+            JToken transformerToken = JsonConvert.DeserializeObject<JToken>(transformerJson, Context.JsonSettings);
             switch (transformerToken.Type)
             {
                 case JTokenType.Object:
@@ -50,14 +43,14 @@ namespace JUST
                     break;
             }
 
-            string output = JsonConvert.SerializeObject(result);
+            string output = JsonConvert.SerializeObject(result, Context.JsonSettings);
 
             return output;
         }
 
         public JArray Transform(JArray transformerArray, string input)
         {
-            return Transform(transformerArray, JsonConvert.DeserializeObject<JToken>(input));
+            return Transform(transformerArray, JsonConvert.DeserializeObject<JToken>(input, Context.JsonSettings));
         }
 
         public JArray Transform(JArray transformerArray, JToken input)
@@ -94,7 +87,7 @@ namespace JUST
 
         public JObject Transform(JObject transformer, string input)
         {
-            return Transform(transformer, JsonConvert.DeserializeObject<JToken>(input));
+            return Transform(transformer, JsonConvert.DeserializeObject<JToken>(input, Context.JsonSettings));
         }
 
         public JObject Transform(JObject transformer, JToken input)
@@ -945,7 +938,7 @@ namespace JUST
         #region Split
         public static IEnumerable<string> SplitJson(string input, string arrayPath, JUSTContext context)
         {
-            JObject inputJObject = JsonConvert.DeserializeObject<JObject>(input);
+            JObject inputJObject = JsonConvert.DeserializeObject<JObject>(input, context.JsonSettings);
 
             List<JObject> jObjects = SplitJson(inputJObject, arrayPath, context).ToList();
 
@@ -956,7 +949,7 @@ namespace JUST
                 if (output == null)
                     output = new List<string>();
 
-                output.Add(JsonConvert.SerializeObject(jObject));
+                output.Add(JsonConvert.SerializeObject(jObject, context.JsonSettings));
             }
 
             return output;
