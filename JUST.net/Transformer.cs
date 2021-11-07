@@ -763,5 +763,10 @@ namespace JUST
             }
             return result;
         }
+
+        public static object ifgroup(bool isToInclude, object val)
+        {
+            return isToInclude ? val : null;
+        }
     }
 }
