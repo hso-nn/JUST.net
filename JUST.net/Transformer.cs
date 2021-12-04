@@ -796,5 +796,10 @@ namespace JUST
         {
             return isToInclude ? val : null;
         }
+
+        public static string stringempty()
+        {
+            return string.Empty;
+        }
     }
 }
