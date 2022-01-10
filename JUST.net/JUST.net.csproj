@@ -6,18 +6,19 @@
     <Description>This a cool .NET Standard library which enables you to transform a JSON document into another JSON document using JSON transformations using JSON path. This is the JSON equivalent of XSLT. 
 This will repace the JUST and JUST.NETCore packages.</Description>
     <Summary>This is the JSON equivalent of XSLT</Summary>
-    <PackageProjectUrl>https://github.com/WorkMaze/JUST.net</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/hso-nn/JUST.net</PackageProjectUrl>
     <Copyright>Neeraj Salpekar 2018</Copyright>
     <PackageRepositoryType>C#</PackageRepositoryType>
     <PackageLicenseUrl>https://github.com/WorkMaze/JUST.net/blob/master/License.md</PackageLicenseUrl>
     <PackageTags>C#;.NET;JSON;XSLT;Transformation;Schema</PackageTags>
-    <RepositoryUrl>https://github.com/WorkMaze/JUST.net</RepositoryUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageReleaseNotes></PackageReleaseNotes>
+    <RepositoryUrl>https://github.com/hso-nn/JUST.net</RepositoryUrl>
     <Version>4.2.0</Version>
     <AssemblyVersion>4.0.0.0</AssemblyVersion>
     <FileVersion>4.0.0.0</FileVersion>
+    <UserSecretsId>f2977d7a-5df5-42bf-8e12-01d6276ff75d</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
